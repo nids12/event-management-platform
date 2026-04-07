@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-
+import "./Dashboard.css";
 function Dashboard() {
   // 🎨 Improved card style
   const cardStyle = {
@@ -81,105 +81,81 @@ function Dashboard() {
     ]
   : [];
 
-  return (
-    <div style={{ padding: "20px" }}>
-      <h2>Organizer Dashboard</h2>
+ return (
+  <div className="container">
+    <h1 className="title">Organizer Dashboard</h1>
 
-      {/* Dropdown */}
-      <select
-        value={selectedEvent}
-        onChange={handleSelect}
-        style={{
-          padding: "10px",
-          borderRadius: "8px",
-          marginTop: "10px",
-        }}
-      >
-        <option value="">Select your event</option>
-
-        {events.map((event) => (
-          <option key={event.id} value={event.id}>
-            {event.title}
-          </option>
-        ))}
-      </select>
-
-      {selectedEventObj && (
-        <h3 style={{ marginTop: "20px" }}>
-          {selectedEventObj.title}
-        </h3>
-      )}
-
-      <hr />
-
-      {loading && <p>Loading analytics...</p>}
-
-      {/* Registrations */}
-      <h3>Registrations</h3>
-
-      {registrations.length === 0 && !loading && (
-        <p>No registrations yet</p>
-      )}
-
-      {registrations.map((r) => (
-        <div
-          key={r.id}
-          style={{
-            border: "1px solid #eee",
-            padding: "10px",
-            borderRadius: "8px",
-            marginBottom: "10px",
-          }}
-        >
-          <p><strong>User:</strong> {r.user_id}</p>
-          <p><strong>Status:</strong> {r.status}</p>
-        </div>
+    {/* Event Selector */}
+    <select
+      value={selectedEvent}
+      onChange={(e) => setSelectedEvent(e.target.value)}
+      className="dropdown"
+    >
+      <option value="">Select Event</option>
+      {events.map((event) => (
+        <option key={event.id} value={event.id}>
+          {event.title}
+        </option>
       ))}
+    </select>
 
-      {/* Analytics Cards */}
-      {analytics && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Analytics</h3>
+    {/* Analytics Cards */}
+    {analytics && (
+      <div className="card-container">
+        <div className="card">
+          <h3>Confirmed</h3>
+          <p>{analytics.confirmed}</p>
+        </div>
 
-          <div style={{ display: "flex", gap: "20px" }}>
-            <div style={cardStyle}>
-              <h4>Confirmed</h4>
-              <p>{analytics.confirmed}</p>
-            </div>
+        <div className="card">
+          <h3>Waitlist</h3>
+          <p>{analytics.waitlist}</p>
+        </div>
 
-            <div style={cardStyle}>
-              <h4>Waitlist</h4>
-              <p>{analytics.waitlist}</p>
-            </div>
+        <div className="card">
+          <h3>Cancelled</h3>
+          <p>{analytics.cancelled}</p>
+        </div>
 
-            <div style={cardStyle}>
-              <h4>Cancelled</h4>
-              <p>{analytics.cancelled}</p>
-            </div>
+        <div className="card">
+          <h3>Remaining</h3>
+          <p>{analytics.remaining}</p>
+        </div>
+      </div>
+    )}
 
-            <div style={cardStyle}>
-              <h4>Remaining</h4>
-              <p>{analytics.remaining_spots}</p>
-            </div>
+    {/* Chart */}
+    {analytics && (
+      <div className="chart-box">
+        <BarChart width={500} height={300} data={[
+          { name: "Confirmed", value: analytics.confirmed },
+          { name: "Waitlist", value: analytics.waitlist },
+          { name: "Cancelled", value: analytics.cancelled },
+        ]}>
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Bar dataKey="value" />
+        </BarChart>
+      </div>
+    )}
+
+    {/* Registrations */}
+    <div className="registrations">
+      <h2>Registrations</h2>
+
+      {registrations.length === 0 ? (
+        <p>No registrations yet</p>
+      ) : (
+        registrations.map((r) => (
+          <div key={r.id} className="registration-card">
+            <p>{r.user.username}</p>
+            <span>{r.status}</span>
           </div>
-        </div>
-      )}
-
-      {/* ✅ Chart (NOW INSIDE MAIN DIV) */}
-      {analytics && (
-        <div style={{ marginTop: "30px" }}>
-          <h3>Analytics Chart</h3>
-
-          <BarChart width={400} height={300} data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="value" />
-          </BarChart>
-        </div>
+        ))
       )}
     </div>
+  </div>
   );
 }
 
