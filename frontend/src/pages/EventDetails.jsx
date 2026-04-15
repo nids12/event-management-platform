@@ -1,17 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import API from "../api/axios";
-
-// 🎨 Button Style Helper
-const buttonStyle = (color) => ({
-  padding: "10px 15px",
-  border: "none",
-  borderRadius: "8px",
-  backgroundColor: color === "green" ? "#4CAF50" : "#f44336",
-  color: "white",
-  cursor: "pointer",
-  marginTop: "10px",
-});
+import Navbar from "../components/Navbar";
+import "./EventDetails.css";
 
 function EventDetails() {
   const { id } = useParams();
@@ -19,18 +10,21 @@ function EventDetails() {
   const [event, setEvent] = useState(null);
   const [registrationStatus, setRegistrationStatus] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [eventNotFound, setEventNotFound] = useState(false);
 
-  // ✅ Fetch event details
+  // Fetch event details
   const fetchEvent = async () => {
     try {
       const response = await API.get(`/events/${id}`);
       setEvent(response.data);
+      setEventNotFound(false);
     } catch (error) {
       console.log("Error fetching event", error);
+      setEventNotFound(true);
     }
   };
 
-  // ✅ Fetch registration status (FINAL CLEAN VERSION)
+  // Fetch registration status
   const fetchRegistrationStatus = async () => {
     try {
       const res = await API.get(`/events/${id}/my-registration`);
@@ -40,20 +34,18 @@ function EventDetails() {
       } else {
         setRegistrationStatus(null);
       }
-
     } catch (error) {
       console.log("Error fetching registration status", error);
     }
   };
 
-  // ✅ Register
+  // Register
   const handleRegister = async () => {
     try {
       setLoading(true);
       await API.post(`/events/${id}/register`);
 
       alert("Registered successfully ✅");
-
       fetchRegistrationStatus();
     } catch (error) {
       alert(error.response?.data?.detail || "Register failed");
@@ -62,14 +54,13 @@ function EventDetails() {
     }
   };
 
-  // ✅ Cancel
+  // Cancel
   const handleCancel = async () => {
     try {
       setLoading(true);
       await API.delete(`/events/${id}/cancel`);
 
       alert("Registration cancelled ❌");
-
       fetchRegistrationStatus();
     } catch (error) {
       alert(error.response?.data?.detail || "Cancel failed");
@@ -83,73 +74,83 @@ function EventDetails() {
     fetchRegistrationStatus();
   }, [id]);
 
+  if (eventNotFound) {
+    return (
+      <>
+        <Navbar />
+        <div className="details-container">
+          <h2>Event not found or may have been deleted.</h2>
+        </div>
+      </>
+    );
+  }
+
   if (!event) return <p>Loading...</p>;
 
   return (
-    <div style={{ padding: "20px", maxWidth: "600px", margin: "auto" }}>
-      <div
-        style={{
-          border: "1px solid #eee",
-          borderRadius: "12px",
-          padding: "20px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-        }}
-      >
-        <h2>{event.title}</h2>
+    <>
+      <Navbar />
 
-        <p><strong>Description:</strong> {event.description}</p>
-        <p><strong>Date:</strong> {event.date}</p>
-        <p><strong>Capacity:</strong> {event.capacity}</p>
+      <div className="details-container">
+        <div className="details-card">
+          <h2>{event.title}</h2>
 
-        <hr />
+          <p>
+            <strong>Description:</strong> {event.description}
+          </p>
 
-        {/* ✅ Loading */}
-        {loading && <p>Processing...</p>}
+          <p>
+            <strong>Date:</strong> {event.date}
+          </p>
 
-        {/* ✅ Confirmed */}
-        {registrationStatus === "confirmed" && (
-          <>
-            <p style={{ color: "green", fontWeight: "bold" }}>
-              ✅ Confirmed Registration
-            </p>
+          <p>
+            <strong>Capacity:</strong> {event.capacity}
+          </p>
+
+          <hr />
+
+          {loading && <p>Processing...</p>}
+
+          {registrationStatus === "confirmed" && (
+            <>
+              <p className="status confirmed">Confirmed Registration</p>
+
+              <button
+                onClick={handleCancel}
+                disabled={loading}
+                className="cancel-btn"
+              >
+                Cancel Registration
+              </button>
+            </>
+          )}
+
+          {registrationStatus === "waitlist" && (
+            <>
+              <p className="status waitlist">Waitlisted</p>
+
+              <button
+                onClick={handleCancel}
+                disabled={loading}
+                className="cancel-btn"
+              >
+                Cancel Registration
+              </button>
+            </>
+          )}
+
+          {registrationStatus === null && (
             <button
-              onClick={handleCancel}
+              onClick={handleRegister}
               disabled={loading}
-              style={buttonStyle("red")}
+              className="register-btn"
             >
-              Cancel Registration
+              Register
             </button>
-          </>
-        )}
-
-        {/* ✅ Waitlist */}
-        {registrationStatus === "waitlist" && (
-          <>
-            <p style={{ color: "orange", fontWeight: "bold" }}>
-              🕐 Waitlisted
-            </p>
-            <button
-              onClick={handleCancel}
-              disabled={loading}
-              style={buttonStyle("red")}
-            >
-              Cancel Registration
-            </button>
-          </>
-        )}
-
-        {/* ✅ Not Registered */}
-        {registrationStatus === null && (
-          <button
-            onClick={handleRegister}
-            disabled={loading}
-            style={buttonStyle("green")}
-          >
-            Register
-          </button>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

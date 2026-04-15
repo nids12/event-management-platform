@@ -4,28 +4,27 @@ from pydantic import BaseModel
 # ---------------- USER ----------------
 
 class UserCreate(BaseModel):
-    username: str
+    name: str
+    email: str
     password: str
     role: str
 
 
 class UserResponse(BaseModel):
     id: int
-    username: str
+    name: str
+    email: str
     role: str
 
     class Config:
-        from_attributes = True   # ✅ updated for Pydantic v2
+        from_attributes = True
 
 
 # ---------------- LOGIN ----------------
-# (Optional now, since we use OAuth2 form, but keep it)
 
 class LoginRequest(BaseModel):
-    username: str
+    email: str
     password: str
-
-
 # ---------------- EVENTS ----------------
 
 class EventCreate(BaseModel):
@@ -54,6 +53,21 @@ class RegistrationResponse(BaseModel):
     user_id: int
     event_id: int
     status: str
+
+    class Config:
+        from_attributes = True
+
+class EventUpdate(BaseModel):
+    title: str
+    description: str
+    date: str
+    capacity: int
+
+class NotificationResponse(BaseModel):
+    id: int
+    user_id: int
+    message: str
+    is_read: bool
 
     class Config:
         from_attributes = True

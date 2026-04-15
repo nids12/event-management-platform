@@ -1,21 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
+import "./Login.css";
 
 function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [selectedRole, setSelectedRole] = useState("participant");
 
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
-    console.log("STEP 1: CLICK");
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
     try {
-      console.log("STEP 2: BEFORE API");
-
       const params = new URLSearchParams();
-      params.append("username", username);
+      params.append("username", email);
       params.append("password", password);
       params.append("grant_type", "password");
 
@@ -25,8 +25,6 @@ function Login() {
         },
       });
 
-      console.log("STEP 3: AFTER API", response.data);
-
       const token = response.data.access_token;
       const role = response.data.role;
 
@@ -35,51 +33,52 @@ function Login() {
         return;
       }
 
+      if (role !== selectedRole) {
+        alert(`You are not registered as ${selectedRole}`);
+        return;
+      }
+
       localStorage.setItem("token", token);
-
-      alert("Login successful ✅");
-
-      console.log("STEP 4: ROLE", role);
+      localStorage.setItem("role", role);
 
       if (role === "organizer") {
-        navigate("/dashboard");
+        navigate("/organizer-dashboard");
+      } else if (role === "admin") {
+        navigate("/admin-dashboard");
       } else {
         navigate("/events");
       }
-
     } catch (error) {
-      console.log("❌ ERROR:", error);
-      alert("Login failed");
+      console.log(error);
+      alert(error.response?.data?.detail || "Login failed");
     }
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        background: "linear-gradient(135deg, #667eea, #764ba2)",
-      }}
-    >
-      <div
-        style={{
-          background: "white",
-          padding: "30px",
-          borderRadius: "10px",
-          width: "300px",
-          textAlign: "center",
-        }}
-      >
-        <h2>Login</h2>
+    <div className="auth-page">
+      <form className="auth-card" onSubmit={handleLogin}>
+        <h1 className="auth-title">
+          SmartEvent <span>Platform</span>
+        </h1>
+
+        <p className="auth-subtitle">Welcome back! Please login.</p>
+
+        <select
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+          className="auth-input"
+        >
+          <option value="participant">Participant</option>
+          <option value="organizer">Organizer</option>
+          <option value="admin">Admin</option>
+        </select>
 
         <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={{ width: "100%", padding: "10px", marginBottom: "10px" }}
+          type="email"
+          placeholder="Email Address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="auth-input"
         />
 
         <input
@@ -87,24 +86,18 @@ function Login() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={{ width: "100%", padding: "10px", marginBottom: "10px" }}
+          className="auth-input"
         />
 
-        <button
-          onClick={handleLogin}
-          style={{
-            width: "100%",
-            padding: "10px",
-            background: "#667eea",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
-        >
+        <button type="submit" className="auth-button">
           Login
         </button>
-      </div>
+
+        <p className="switch-auth">
+          Don't have an account?{" "}
+          <span onClick={() => navigate("/register")}>Sign Up</span>
+        </p>
+      </form>
     </div>
   );
 }

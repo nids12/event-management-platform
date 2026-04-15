@@ -1,3 +1,24 @@
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+  color: #1e293b;
+}
+
+/* Smooth rendering */
+* {
+  box-sizing: border-box;
+}
+
+/* Headings */
+h1, h2, h3 {
+  margin: 0;
+}
+
+/* Buttons default */
+button {
+  font-family: inherit;
+}
 .counter {
   font-size: 16px;
   padding: 5px 10px;

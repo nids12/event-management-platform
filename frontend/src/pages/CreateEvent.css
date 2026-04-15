@@ -1,0 +1,41 @@
+.create-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.create-card {
+  background: white;
+  padding: 30px;
+  width: 500px;
+  border-radius: 16px;
+  box-shadow: 0 5px 18px rgba(0,0,0,0.08);
+
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.create-card h2 {
+  text-align: center;
+}
+
+.create-card input,
+.create-card textarea {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.create-card textarea {
+  min-height: 100px;
+}
+
+.create-card button {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}

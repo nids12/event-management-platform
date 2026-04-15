@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import API from "../api/axios";
+import Navbar from "../components/Navbar";
+import "./MyRegistrations.css";
 
 function MyRegistrations() {
   const [registrations, setRegistrations] = useState([]);
   const [events, setEvents] = useState([]);
 
-  // ✅ Fetch registrations
   const fetchRegistrations = async () => {
     try {
       const res = await API.get("/registrations/my");
@@ -15,10 +17,10 @@ function MyRegistrations() {
     }
   };
 
-  // ✅ Fetch all events (to map event names)
   const fetchEvents = async () => {
     try {
-      const res = await API.get("/events");
+      // fetch many events so pagination doesn't hide them
+      const res = await API.get("/events?limit=1000");
       setEvents(res.data);
     } catch (err) {
       console.log(err);
@@ -30,50 +32,42 @@ function MyRegistrations() {
     fetchEvents();
   }, []);
 
-  // 🎯 helper to get event title
   const getEventTitle = (eventId) => {
     const event = events.find((e) => e.id === eventId);
-    return event ? event.title : "Unknown Event";
+    return event ? event.title : "Deleted/Unknown Event";
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "600px", margin: "auto" }}>
-      <h2>My Registrations</h2>
+    <>
+      <Navbar />
 
-      {registrations.length === 0 && <p>No registrations yet</p>}
+      <div className="registrations-container">
+        <h2 className="registrations-title">My Registrations</h2>
 
-      {registrations.map((r) => (
-        <div
-          key={r.id}
-          style={{
-            border: "1px solid #eee",
-            padding: "15px",
-            borderRadius: "10px",
-            marginBottom: "10px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          }}
-        >
-          <p><strong>Event:</strong> {getEventTitle(r.event_id)}</p>
+        {registrations.length === 0 && <p>No registrations yet</p>}
 
-          <p>
-            <strong>Status:</strong>{" "}
-            <span
-              style={{
-                color:
-                  r.status === "confirmed"
-                    ? "green"
-                    : r.status === "waitlist"
-                    ? "orange"
-                    : "red",
-                fontWeight: "bold",
-              }}
-            >
-              {r.status}
-            </span>
-          </p>
-        </div>
-      ))}
-    </div>
+        {registrations.map((r) => (
+          <Link
+            to={`/events/${r.event_id}`}
+            key={r.id}
+            style={{ textDecoration: "none" }}
+          >
+            <div className="registration-box">
+              <p>
+                <strong>Event:</strong> {getEventTitle(r.event_id)}
+              </p>
+
+              <p>
+                <strong>Status:</strong>{" "}
+                <span className={`status ${r.status}`}>
+                  {r.status}
+                </span>
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </>
   );
 }
 

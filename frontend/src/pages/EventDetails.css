@@ -1,0 +1,92 @@
+.details-container {
+  max-width: 800px;
+  margin: auto;
+  padding: 40px 20px;
+}
+
+/* Card */
+.details-card {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 35px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+  transition: 0.3s ease;
+}
+
+/* Title */
+.details-card h2 {
+  font-size: 30px;
+  margin-bottom: 20px;
+  color: #1e293b;
+}
+
+/* Text */
+.details-card p {
+  margin-bottom: 14px;
+  font-size: 16px;
+  color: #475569;
+}
+
+/* Divider */
+.details-card hr {
+  margin: 25px 0;
+  border: none;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+/* Status */
+.status {
+  font-weight: 600;
+  margin: 20px 0;
+  font-size: 18px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+/* Status colors */
+.confirmed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.waitlist {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Buttons */
+.register-btn,
+.cancel-btn {
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: 0.3s ease;
+}
+
+/* Register button */
+.register-btn {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.register-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(34,197,94,0.3);
+}
+
+/* Cancel button */
+.cancel-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.cancel-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(239,68,68,0.3);
+}

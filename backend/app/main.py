@@ -21,7 +21,10 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,10 +41,23 @@ def root():
 @app.post("/users", response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
+    # 🔥 CHECK IF EMAIL EXISTS
+    existing = db.query(models.User).filter(
+        models.User.email == user.email
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered"
+        )
+
     hashed_pwd = hash_password(user.password)
 
     db_user = models.User(
-        username=user.username,
+        username=user.email,
+        name=user.name,
+        email=user.email,
         password=hashed_pwd,
         role=user.role
     )
@@ -66,7 +82,7 @@ def login(
 ):
 
     db_user = db.query(models.User).filter(
-        models.User.username == form_data.username
+        models.User.email == form_data.username
     ).first()
 
     if db_user is None:
@@ -76,7 +92,7 @@ def login(
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
     access_token = create_access_token(
-        data={"sub": db_user.username}
+        data={"sub": db_user.email}
     )
 
     return {
@@ -84,11 +100,49 @@ def login(
         "token_type": "bearer",
         "role": db_user.role
     }
-    # ---------------- GET CURRENT USER ----------------
+
+
+# ---------------- GET CURRENT USER ----------------
 
 @app.get("/users/me", response_model=schemas.UserResponse)
 def get_me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+def require_admin(current_user: models.User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only admin can access this"
+        )
+    return current_user
+
+@app.get("/admin/stats")
+def get_admin_stats(
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(require_admin)
+):
+    total_users = db.query(models.User).count()
+    total_events = db.query(models.Event).count()
+    total_registrations = db.query(models.Registration).count()
+
+    return {
+        "total_users": total_users,
+        "total_events": total_events,
+        "total_registrations": total_registrations
+    }
+@app.get("/admin/users")
+def get_all_users(
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(require_admin)
+):
+    return db.query(models.User).all()
+
+@app.get("/admin/events")
+def get_all_events(
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(require_admin)
+):
+    return db.query(models.Event).all()
 
 # ---------------- MY REGISTRATION ----------------
 
@@ -100,7 +154,8 @@ def get_my_registration(
 ):
     registration = db.query(models.Registration).filter(
         models.Registration.event_id == event_id,
-        models.Registration.user_id == current_user.id
+        models.Registration.user_id == current_user.id,
+        models.Registration.status.in_(["confirmed", "waitlist"])
     ).first()
 
     return registration
@@ -112,6 +167,11 @@ def create_event(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
+    if current_user.role != "organizer":
+        raise HTTPException(
+            status_code=403,
+            detail="Only organizer can create events"
+        )
 
     db_event = models.Event(
         title=event.title,
@@ -192,13 +252,16 @@ def register_event(
         raise HTTPException(status_code=404, detail="Event not found")
 
     existing = db.query(models.Registration).filter(
-        models.Registration.event_id == event_id,
-        models.Registration.user_id == current_user.id
-    ).first()
+    models.Registration.event_id == event_id,
+    models.Registration.user_id == current_user.id,
+    models.Registration.status.in_(["confirmed", "waitlist"])
+).first()
 
     if existing:
-        raise HTTPException(status_code=400, detail="User already registered")
-
+        raise HTTPException(
+           status_code=400,
+           detail="User already registered"
+    )
     confirmed_count = db.query(models.Registration).filter(
         models.Registration.event_id == event_id,
         models.Registration.status == "confirmed"
@@ -312,20 +375,7 @@ def get_event_analytics(
         "cancelled": cancelled,
         "remaining_spots": remaining_spots
     }
-# ---------------- MY REGISTRATION ----------------
 
-@app.get("/events/{event_id}/my-registration")
-def get_my_registration(
-    event_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
-):
-    registration = db.query(models.Registration).filter(
-        models.Registration.event_id == event_id,
-        models.Registration.user_id == current_user.id
-    ).first()
-
-    return registration
 
 
 # ---------------- MY REGISTRATIONS ----------------
@@ -337,4 +387,99 @@ def get_my_registrations(
 ):
     return db.query(models.Registration).filter(
         models.Registration.user_id == current_user.id
+    ).all()
+
+
+@app.delete("/events/{event_id}")
+def delete_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    event = db.query(models.Event).filter(
+        models.Event.id == event_id
+    ).first()
+
+    if event is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found"
+        )
+
+    if event.organizer_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized to delete this event"
+        )
+
+    # Delete related registrations first
+    db.query(models.Registration).filter(
+        models.Registration.event_id == event_id
+    ).delete()
+
+    # Delete related notifications if needed later
+    db.delete(event)
+
+    db.commit()
+
+    return {"message": "Event deleted successfully"}
+
+@app.put("/events/{event_id}")
+def update_event(
+    event_id: int,
+    updated_event: schemas.EventUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    event = db.query(models.Event).filter(
+        models.Event.id == event_id
+    ).first()
+
+    if event is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found"
+        )
+
+    if event.organizer_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized"
+        )
+
+    event.title = updated_event.title
+    event.description = updated_event.description
+    event.date = updated_event.date
+    event.capacity = updated_event.capacity
+
+    db.commit()
+    db.refresh(event)
+
+    registrations = db.query(models.Registration).filter(
+        models.Registration.event_id == event_id,
+        models.Registration.status == "confirmed"
+    ).all()
+
+    for reg in registrations:
+        notification = models.Notification(
+            user_id=reg.user_id,
+            message=f"The event '{event.title}' has been updated."
+        )
+
+        db.add(notification)
+
+    db.commit()
+
+    return {
+        "message": "Event updated successfully"
+    }
+
+
+@app.get("/notifications", response_model=list[schemas.NotificationResponse])
+def get_notifications(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    return db.query(models.Notification).filter(
+        models.Notification.user_id == current_user.id
     ).all()
