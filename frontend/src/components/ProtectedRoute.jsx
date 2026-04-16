@@ -1,17 +1,29 @@
 import { Navigate } from "react-router-dom";
+import {
+  clearSession,
+  getDefaultRouteForRole,
+  getRole,
+  getToken,
+  isTokenExpired,
+  queueAuthMessage,
+} from "../utils/auth";
 
 function ProtectedRoute({ children, allowedRoles }) {
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  const token = getToken();
+  const role = getRole();
 
-  // Not logged in
   if (!token) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
-  // Role not allowed
+  if (isTokenExpired(token)) {
+    clearSession();
+    queueAuthMessage("Your session expired. Please login again.");
+    return <Navigate to="/login" replace />;
+  }
+
   if (allowedRoles && !allowedRoles.includes(role)) {
-    return <Navigate to="/login" />;
+    return <Navigate to={getDefaultRouteForRole(role)} replace />;
   }
 
   return children;

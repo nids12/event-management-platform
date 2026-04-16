@@ -2,29 +2,32 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import API from "../api/axios";
 import Navbar from "../components/Navbar";
+import { showToast } from "../lib/toast";
+import { getRole, getUserId } from "../utils/auth";
+import { formatEventDate } from "../utils/date";
+import { getEventStatusMeta } from "../utils/eventStatus";
 import "./EventDetails.css";
 
 function EventDetails() {
   const { id } = useParams();
+  const role = getRole();
 
   const [event, setEvent] = useState(null);
   const [registrationStatus, setRegistrationStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [eventNotFound, setEventNotFound] = useState(false);
 
-  // Fetch event details
   const fetchEvent = async () => {
     try {
       const response = await API.get(`/events/${id}`);
       setEvent(response.data);
       setEventNotFound(false);
-    } catch (error) {
-      console.log("Error fetching event", error);
+    } catch {
+      showToast("Unable to load this event.", "error");
       setEventNotFound(true);
     }
   };
 
-  // Fetch registration status
   const fetchRegistrationStatus = async () => {
     try {
       const res = await API.get(`/events/${id}/my-registration`);
@@ -34,36 +37,40 @@ function EventDetails() {
       } else {
         setRegistrationStatus(null);
       }
-    } catch (error) {
-      console.log("Error fetching registration status", error);
+    } catch {
+      setRegistrationStatus(null);
     }
   };
 
-  // Register
   const handleRegister = async () => {
+    if (loading) {
+      return;
+    }
+
     try {
       setLoading(true);
       await API.post(`/events/${id}/register`);
-
-      alert("Registered successfully ✅");
+      showToast("Registered successfully.", "success");
       fetchRegistrationStatus();
     } catch (error) {
-      alert(error.response?.data?.detail || "Register failed");
+      showToast(error.response?.data?.detail || "Register failed.", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  // Cancel
   const handleCancel = async () => {
+    if (loading) {
+      return;
+    }
+
     try {
       setLoading(true);
       await API.delete(`/events/${id}/cancel`);
-
-      alert("Registration cancelled ❌");
+      showToast("Registration cancelled.", "info");
       fetchRegistrationStatus();
     } catch (error) {
-      alert(error.response?.data?.detail || "Cancel failed");
+      showToast(error.response?.data?.detail || "Cancel failed.", "error");
     } finally {
       setLoading(false);
     }
@@ -85,7 +92,14 @@ function EventDetails() {
     );
   }
 
-  if (!event) return <p>Loading...</p>;
+  if (!event) {
+    return <p>Loading...</p>;
+  }
+
+  const statusMeta = getEventStatusMeta(event.status);
+  const currentUserId = parseInt(getUserId());
+  const isEventOrganizer = event.organizer_id === currentUserId;
+  const canManageRegistration = ["participant", "organizer", "admin"].includes(role) && !isEventOrganizer;
 
   return (
     <>
@@ -93,25 +107,53 @@ function EventDetails() {
 
       <div className="details-container">
         <div className="details-card">
-          <h2>{event.title}</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center" }}>
+            <h2>{event.title}</h2>
+            <span className={`status-badge ${statusMeta.className}`}>
+              {statusMeta.label}
+            </span>
+          </div>
 
           <p>
             <strong>Description:</strong> {event.description}
           </p>
 
           <p>
-            <strong>Date:</strong> {event.date}
+            <strong>Date:</strong> {formatEventDate(event.date)}
           </p>
 
-          <p>
-            <strong>Capacity:</strong> {event.capacity}
-          </p>
+          {role !== "participant" && (
+            <>
+              <p>
+                <strong>Capacity:</strong> {event.capacity}
+              </p>
+
+              <p>
+                <strong>Confirmed Seats:</strong> {event.confirmed_count}
+              </p>
+            </>
+          )}
+
+          {role === "participant" && (
+            <p>
+              <strong>Available Seats:</strong> {event.capacity - event.confirmed_count}
+            </p>
+          )}
 
           <hr />
 
           {loading && <p>Processing...</p>}
 
-          {registrationStatus === "confirmed" && (
+          {!canManageRegistration && (
+            <p className="status confirmed">
+              {isEventOrganizer
+                ? "You are the organizer of this event."
+                : `This page is view-only for ${role}. Participants can register from here.`
+              }
+            </p>
+          )}
+
+          {canManageRegistration && registrationStatus === "confirmed" && (
             <>
               <p className="status confirmed">Confirmed Registration</p>
 
@@ -125,7 +167,7 @@ function EventDetails() {
             </>
           )}
 
-          {registrationStatus === "waitlist" && (
+          {canManageRegistration && registrationStatus === "waitlist" && (
             <>
               <p className="status waitlist">Waitlisted</p>
 
@@ -139,7 +181,7 @@ function EventDetails() {
             </>
           )}
 
-          {registrationStatus === null && (
+          {canManageRegistration && registrationStatus === null && (
             <button
               onClick={handleRegister}
               disabled={loading}

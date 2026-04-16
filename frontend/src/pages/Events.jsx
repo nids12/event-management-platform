@@ -2,13 +2,17 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import Navbar from "../components/Navbar";
+import PageHeader from "../components/PageHeader";
+import { showToast } from "../lib/toast";
+import { formatEventDate } from "../utils/date";
+import { getEventStatusMeta } from "../utils/eventStatus";
 import "./Events.css";
 
 function Events() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const limit = 5;
   const [events, setEvents] = useState([]);
+  const limit = 5;
 
   const navigate = useNavigate();
 
@@ -23,8 +27,8 @@ function Events() {
       });
 
       setEvents(res.data);
-    } catch (error) {
-      console.log("Error fetching events", error);
+    } catch {
+      showToast("Error fetching events.", "error");
     }
   };
 
@@ -37,16 +41,15 @@ function Events() {
       <Navbar />
 
       <div className="events-container">
-        <div className="events-header">
-          <h2 className="events-title">Discover Amazing Events</h2>
-          <p className="events-subtitle">
-            Find and join exciting experiences happening around you 🚀
-          </p>
-        </div>
+        <PageHeader
+          eyebrow="Event Directory"
+          title="Discover Amazing Events"
+          subtitle="Browse upcoming experiences, check availability at a glance, and open the full event view for details."
+        />
 
         <input
           type="text"
-          placeholder="🔍 Search events by title..."
+          placeholder="Search events by title..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -59,28 +62,36 @@ function Events() {
           <p className="no-events">No events found.</p>
         ) : (
           <div className="events-list">
-            {events.map((event) => (
-              <div
-                key={event.id}
-                className="event-box"
-                onClick={() => navigate(`/events/${event.id}`)}
-              >
-                <div className="event-top">
-                  <h3>{event.title}</h3>
-                  <span className="event-badge">Live</span>
+            {events.map((event) => {
+              const statusMeta = getEventStatusMeta(event.status);
+
+              return (
+                <div
+                  key={event.id}
+                  className="event-box"
+                  onClick={() => navigate(`/events/${event.id}`)}
+                >
+                  <div className="event-top">
+                    <h3>{event.title}</h3>
+                    <span className={`status-badge ${statusMeta.className}`}>
+                      {statusMeta.label}
+                    </span>
+                  </div>
+
+                  <p className="event-description">{event.description}</p>
+
+                  <div className="event-footer">
+                    <p>
+                      <strong>{formatEventDate(event.date)}</strong>
+                    </p>
+                    <p>
+                      {event.confirmed_count}/{event.capacity} seats filled
+                    </p>
+                    <button className="view-btn">View Details</button>
+                  </div>
                 </div>
-
-                <p className="event-description">{event.description}</p>
-
-                <div className="event-footer">
-                  <p>
-                    📅 <strong>{event.date}</strong>
-                  </p>
-
-                  <button className="view-btn">View Details →</button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -89,7 +100,7 @@ function Events() {
             onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
             disabled={page === 0}
           >
-            ← Previous
+            Previous
           </button>
 
           <span className="page-number">Page {page + 1}</span>
@@ -98,7 +109,7 @@ function Events() {
             onClick={() => setPage((prev) => prev + 1)}
             disabled={events.length < limit}
           >
-            Next →
+            Next
           </button>
         </div>
       </div>

@@ -43,3 +43,15 @@ class Notification(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     message = Column(String)
     is_read = Column(Boolean, default=False)
+
+
+class ReminderLog(Base):
+    __tablename__ = "reminder_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    registration_id = Column(Integer, nullable=False)
+    reminder_type = Column(String, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("registration_id", "reminder_type", name="unique_registration_reminder"),
+    )

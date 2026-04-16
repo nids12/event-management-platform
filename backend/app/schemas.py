@@ -1,7 +1,7 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
-
-# ---------------- USER ----------------
 
 class UserCreate(BaseModel):
     name: str
@@ -20,12 +20,10 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
-# ---------------- LOGIN ----------------
-
 class LoginRequest(BaseModel):
     email: str
     password: str
-# ---------------- EVENTS ----------------
+
 
 class EventCreate(BaseModel):
     title: str
@@ -40,28 +38,32 @@ class EventResponse(BaseModel):
     description: str
     date: str
     capacity: int
-    organizer_id: int   # ✅ VERY IMPORTANT (for dashboard filter)
+    organizer_id: int
+    confirmed_count: int = 0
+    status: str = "upcoming"
 
     class Config:
         from_attributes = True
 
-
-# ---------------- REGISTRATION ----------------
 
 class RegistrationResponse(BaseModel):
     id: int
     user_id: int
     event_id: int
     status: str
+    user_name: Optional[str] = None
+    user_email: Optional[str] = None
 
     class Config:
         from_attributes = True
+
 
 class EventUpdate(BaseModel):
     title: str
     description: str
     date: str
     capacity: int
+
 
 class NotificationResponse(BaseModel):
     id: int

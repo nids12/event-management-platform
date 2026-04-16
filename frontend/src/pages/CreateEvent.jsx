@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import Navbar from "../components/Navbar";
+import { showToast } from "../lib/toast";
 import "./CreateEvent.css";
 
 function CreateEvent() {
@@ -9,24 +10,55 @@ function CreateEvent() {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [capacity, setCapacity] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
   const handleCreateEvent = async () => {
+    if (submitting) {
+      return;
+    }
+
+    if (!title.trim() || !description.trim() || !date || !capacity) {
+      showToast("Please fill in all event fields.", "error");
+      return;
+    }
+
+    if (title.trim().length < 3) {
+      showToast("Event title must be at least 3 characters.", "error");
+      return;
+    }
+
+    if (description.trim().length < 10) {
+      showToast("Event description must be at least 10 characters.", "error");
+      return;
+    }
+
+    if (Number(capacity) <= 0) {
+      showToast("Capacity must be greater than 0.", "error");
+      return;
+    }
+
+    if (new Date(date) <= new Date()) {
+      showToast("Event date must be in the future.", "error");
+      return;
+    }
+
     try {
+      setSubmitting(true);
       await API.post("/events", {
-        title,
-        description,
+        title: title.trim(),
+        description: description.trim(),
         date,
-        capacity: parseInt(capacity),
+        capacity: parseInt(capacity, 10),
       });
 
-      alert("Event created successfully!");
-
+      showToast("Event created successfully.", "success");
       navigate("/organizer-dashboard");
     } catch (err) {
-      console.log(err);
-      alert("Failed to create event");
+      showToast(err.response?.data?.detail || "Failed to create event.", "error");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -64,8 +96,8 @@ function CreateEvent() {
             onChange={(e) => setCapacity(e.target.value)}
           />
 
-          <button onClick={handleCreateEvent}>
-            Create Event
+          <button onClick={handleCreateEvent} disabled={submitting}>
+            {submitting ? "Creating..." : "Create Event"}
           </button>
         </div>
       </div>

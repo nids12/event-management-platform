@@ -12,7 +12,8 @@ function RoleSelect() {
         Login as Organizer
       </button>
 
-      <br /><br />
+      <br />
+      <br />
 
       <button onClick={() => navigate("/register?role=organizer")}>
         Register as Organizer
@@ -20,15 +21,16 @@ function RoleSelect() {
 
       <hr />
 
-      <h3>User</h3>
-      <button onClick={() => navigate("/login?role=user")}>
-        Login as User
+      <h3>Participant</h3>
+      <button onClick={() => navigate("/login?role=participant")}>
+        Login as Participant
       </button>
 
-      <br /><br />
+      <br />
+      <br />
 
-      <button onClick={() => navigate("/register?role=user")}>
-        Register as User
+      <button onClick={() => navigate("/register?role=participant")}>
+        Register as Participant
       </button>
     </div>
   );

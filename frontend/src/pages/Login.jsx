@@ -1,14 +1,46 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import API from "../api/axios";
+import { showToast } from "../lib/toast";
+import {
+  consumeAuthMessage,
+  getDefaultRouteForRole,
+  getRole,
+  hasValidSession,
+  setSession,
+} from "../utils/auth";
 import "./Login.css";
 
 function Login() {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedRole, setSelectedRole] = useState("participant");
+  const initialRole = searchParams.get("role");
+  const [selectedRole, setSelectedRole] = useState(
+    initialRole === "organizer" || initialRole === "admin"
+      ? initialRole
+      : "participant"
+  );
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const authMessage = consumeAuthMessage();
+    if (authMessage) {
+      showToast(authMessage, "error");
+    }
+  }, [location.key]);
+
+  useEffect(() => {
+    if (hasValidSession()) {
+      navigate(getDefaultRouteForRole(getRole()), { replace: true });
+    }
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -27,19 +59,20 @@ function Login() {
 
       const token = response.data.access_token;
       const role = response.data.role;
+      const userId = response.data.user_id;
 
       if (!token) {
-        alert("No token received");
+        showToast("No token received from the server.", "error");
         return;
       }
 
       if (role !== selectedRole) {
-        alert(`You are not registered as ${selectedRole}`);
+        showToast(`You are not registered as ${selectedRole}.`, "error");
         return;
       }
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", role);
+      setSession(token, role, userId);
+      showToast("Login successful.", "success");
 
       if (role === "organizer") {
         navigate("/organizer-dashboard");
@@ -49,8 +82,7 @@ function Login() {
         navigate("/events");
       }
     } catch (error) {
-      console.log(error);
-      alert(error.response?.data?.detail || "Login failed");
+      showToast(error.response?.data?.detail || "Login failed.", "error");
     }
   };
 

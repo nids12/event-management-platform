@@ -4,14 +4,6 @@
   margin: auto;
 }
 
-.title {
-  text-align: center;
-  margin-bottom: 30px;
-  font-size: 28px;
-  font-weight: 600;
-}
-
-/* Event Grid */
 .events-grid {
   display: flex;
   flex-wrap: wrap;
@@ -20,15 +12,14 @@
   justify-content: center;
 }
 
-/* Event Card */
 .event-card {
   background: white;
   padding: 20px;
-  width: 260px;
-  border-radius: 14px;
+  width: 280px;
+  border-radius: 16px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-
   transition: all 0.25s ease;
+  text-align: left;
 }
 
 .event-card:hover {
@@ -36,12 +27,17 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
-/* Active Selected Card */
+.event-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
 .active-card {
   border: 2px solid #667eea;
 }
 
-/* Button */
 .event-card button {
   margin-top: 12px;
   padding: 10px;
@@ -58,7 +54,6 @@
   background: #5a67d8;
 }
 
-/* Analytics Cards */
 .card-container {
   display: flex;
   gap: 20px;
@@ -74,8 +69,7 @@
   min-width: 180px;
   text-align: center;
   font-size: 18px;
-
-  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
 }
 
 .card h3 {
@@ -83,27 +77,71 @@
   color: #334155;
 }
 
-/* Chart */
 .chart-box {
   display: flex;
   justify-content: center;
   margin-bottom: 40px;
 }
 
-/* Registrations */
+.simple-chart {
+  width: min(100%, 560px);
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.simple-chart-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 40px;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.simple-chart-row:last-child {
+  margin-bottom: 0;
+}
+
+.simple-chart-label {
+  font-weight: 600;
+  color: #334155;
+}
+
+.simple-chart-track {
+  height: 12px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.simple-chart-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #667eea 0%, #4f46e5 100%);
+  min-width: 8px;
+}
+
+.simple-chart-value {
+  font-weight: 700;
+  color: #1e293b;
+  text-align: right;
+}
+
 .registrations {
   margin-top: 30px;
+  text-align: left;
 }
 
 .registration-card {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   background: #ffffff;
-  padding: 14px 16px;
+  padding: 16px 18px;
   margin-bottom: 12px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid #eee;
-
   transition: 0.2s;
 }
 
@@ -111,22 +149,15 @@
   background: #f9fafb;
 }
 
-/* Status Styling (optional upgrade later) */
-.registration-card span {
-  font-weight: 500;
-  color: #667eea;
+.registration-name {
+  font-weight: 700;
+  color: #0f172a;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .events-grid {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .card-container {
-    flex-direction: column;
-  }
+.registration-email {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 14px;
 }
 
 .create-btn {
@@ -134,8 +165,7 @@
   color: white;
   padding: 12px 20px;
   border: none;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  border-radius: 999px;
   cursor: pointer;
   font-weight: bold;
 }
@@ -157,4 +187,21 @@
 
 .delete-btn:hover {
   background: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .events-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .card-container {
+    flex-direction: column;
+  }
+
+  .registration-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 }

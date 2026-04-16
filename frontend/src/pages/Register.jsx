@@ -1,13 +1,20 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import API from "../api/axios";
+import { showToast } from "../lib/toast";
 import "./Login.css";
 
 function Register() {
+  const [searchParams] = useSearchParams();
+  const initialRole = searchParams.get("role");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("participant");
+  const [role, setRole] = useState(
+    initialRole === "organizer" || initialRole === "admin"
+      ? initialRole
+      : "participant"
+  );
 
   const navigate = useNavigate();
 
@@ -15,18 +22,18 @@ function Register() {
     e.preventDefault();
 
     if (name.trim().length < 2) {
-      alert("Name must be at least 2 characters");
+      showToast("Name must be at least 2 characters.", "error");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      alert("Enter a valid email address");
+      showToast("Enter a valid email address.", "error");
       return;
     }
 
     if (password.length < 6) {
-      alert("Password must be at least 6 characters");
+      showToast("Password must be at least 6 characters.", "error");
       return;
     }
 
@@ -38,10 +45,10 @@ function Register() {
         role,
       });
 
-      alert("Registration successful!");
+      showToast("Registration successful. Please login.", "success");
       navigate("/login");
     } catch (err) {
-      alert(err.response?.data?.detail || "Registration failed");
+      showToast(err.response?.data?.detail || "Registration failed.", "error");
     }
   };
 

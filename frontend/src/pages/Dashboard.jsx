@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
-
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
-
 import Navbar from "../components/Navbar";
+import PageHeader from "../components/PageHeader";
+import { showToast } from "../lib/toast";
+import { formatEventDate } from "../utils/date";
+import {
+  getEventStatusMeta,
+  getRegistrationStatusMeta,
+} from "../utils/eventStatus";
 import "./Dashboard.css";
 
 function Dashboard() {
@@ -23,45 +20,38 @@ function Dashboard() {
 
   const navigate = useNavigate();
 
-  // Fetch organizer events
   const fetchMyEvents = async () => {
     try {
       const res = await API.get("/events/my-events");
       setEvents(res.data);
-    } catch (err) {
-      console.log(err);
-      alert("Error fetching events");
+    } catch {
+      showToast("Error fetching events.", "error");
     }
   };
 
-  // Fetch registrations
   const fetchRegistrations = async (eventId) => {
     try {
       const res = await API.get(`/events/${eventId}/registrations`);
       setRegistrations(res.data);
-    } catch (err) {
-      alert("Error fetching registrations");
+    } catch {
+      showToast("Error fetching registrations.", "error");
     }
   };
 
-  // Fetch analytics
   const fetchAnalytics = async (eventId) => {
     try {
       setLoading(true);
-
       const res = await API.get(`/events/${eventId}/analytics`);
       setAnalytics(res.data);
-    } catch (err) {
-      alert("Error fetching analytics");
+    } catch {
+      showToast("Error fetching analytics.", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  // On clicking event card
   const handleEventClick = (eventId) => {
     setSelectedEvent(eventId);
-
     fetchRegistrations(eventId);
     fetchAnalytics(eventId);
   };
@@ -70,6 +60,22 @@ function Dashboard() {
     fetchMyEvents();
   }, []);
 
+  const handleDeleteEvent = async (eventId) => {
+    try {
+      await API.delete(`/events/${eventId}`);
+      showToast("Event deleted successfully.", "success");
+      fetchMyEvents();
+
+      if (selectedEvent === eventId) {
+        setSelectedEvent(null);
+        setAnalytics(null);
+        setRegistrations([]);
+      }
+    } catch (err) {
+      showToast(err.response?.data?.detail || "Failed to delete event.", "error");
+    }
+  };
+
   const chartData = analytics
     ? [
         { name: "Confirmed", value: analytics.confirmed },
@@ -77,77 +83,65 @@ function Dashboard() {
         { name: "Cancelled", value: analytics.cancelled },
       ]
     : [];
-    const handleDeleteEvent = async (eventId) => {
-  try {
-    await API.delete(`/events/${eventId}`);
-
-    alert("Event deleted successfully");
-
-    fetchMyEvents();
-
-    if (selectedEvent === eventId) {
-      setSelectedEvent(null);
-      setAnalytics(null);
-      setRegistrations([]);
-    }
-
-  } catch (err) {
-    alert("Failed to delete event");
-  }
-};
+  const maxChartValue = Math.max(...chartData.map((item) => item.value), 1);
 
   return (
     <>
       <Navbar />
 
       <div className="container">
-        <h1 className="title">Organizer Dashboard</h1>
+        <PageHeader
+          eyebrow="Organizer Workspace"
+          title="Event Control Center"
+          subtitle="Track registrations, monitor attendance status, and keep every event polished and up to date."
+          actions={
+            <button className="create-btn" onClick={() => navigate("/create-event")}>
+              + Create Event
+            </button>
+          }
+        />
 
-        <button
-          className="create-btn"
-          onClick={() => navigate("/create-event")}
-        >
-          + Create Event
-        </button>
-
-        {/* Event Cards */}
         <div className="events-grid">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className={`event-card ${
-                selectedEvent === event.id ? "active-card" : ""
-              }`}
-            >
-              <h3>{event.title}</h3>
-              <p>{event.description}</p>
-              <p>Date: {event.date}</p>
-              <p>Capacity: {event.capacity}</p>
+          {events.map((event) => {
+            const statusMeta = getEventStatusMeta(event.status);
 
-               <button onClick={() => handleEventClick(event.id)}>
-  View Details
-</button>
+            return (
+              <div
+                key={event.id}
+                className={`event-card ${
+                  selectedEvent === event.id ? "active-card" : ""
+                }`}
+              >
+                <div className="event-card-top">
+                  <h3>{event.title}</h3>
+                  <span className={`status-badge ${statusMeta.className}`}>
+                    {statusMeta.label}
+                  </span>
+                </div>
 
-<button
-  onClick={() => navigate(`/edit-event/${event.id}`)}
->
-  Edit Event
-</button>
+                <p>{event.description}</p>
+                <p>Date: {formatEventDate(event.date)}</p>
+                <p>
+                  Seats: {event.confirmed_count}/{event.capacity}
+                </p>
 
-<button
-  className="delete-btn"
-  onClick={() => handleDeleteEvent(event.id)}
->
-  Delete Event
-</button>
-            </div>
-          ))}
+                <button onClick={() => handleEventClick(event.id)}>View Details</button>
+                <button onClick={() => navigate(`/edit-event/${event.id}`)}>
+                  Edit Event
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={() => handleDeleteEvent(event.id)}
+                >
+                  Delete Event
+                </button>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Loading */}
         {loading && <p>Loading analytics...</p>}
 
-        {/* Analytics */}
         {analytics && (
           <>
             <div className="card-container">
@@ -172,33 +166,53 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* Chart */}
             <div className="chart-box">
-              <BarChart width={500} height={300} data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="#667eea" />
-              </BarChart>
+              <div className="simple-chart">
+                {chartData.map((item) => (
+                  <div key={item.name} className="simple-chart-row">
+                    <span className="simple-chart-label">{item.name}</span>
+                    <div className="simple-chart-track">
+                      <div
+                        className="simple-chart-bar"
+                        style={{
+                          width: `${(item.value / maxChartValue) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="simple-chart-value">{item.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </>
         )}
 
-        {/* Registrations */}
         {selectedEvent && (
           <div className="registrations">
-            <h2>Registrations</h2>
+            <h2>Attendee List</h2>
 
             {registrations.length === 0 ? (
               <p>No registrations yet</p>
             ) : (
-              registrations.map((r) => (
-                <div key={r.id} className="registration-card">
-                  <p>User ID: {r.user_id}</p>
-                  <span>{r.status}</span>
-                </div>
-              ))
+              registrations.map((registration) => {
+                const statusMeta = getRegistrationStatusMeta(registration.status);
+
+                return (
+                  <div key={registration.id} className="registration-card">
+                    <div>
+                      <p className="registration-name">
+                        {registration.user_name || `User ${registration.user_id}`}
+                      </p>
+                      <p className="registration-email">
+                        {registration.user_email || "Email unavailable"}
+                      </p>
+                    </div>
+                    <span className={`status-badge ${statusMeta.className}`}>
+                      {statusMeta.label}
+                    </span>
+                  </div>
+                );
+              })
             )}
           </div>
         )}

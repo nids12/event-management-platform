@@ -1,43 +1,96 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import API from "../api/axios";
+import { showToast } from "../lib/toast";
+import { clearSession, getRole } from "../utils/auth";
 
 function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const role = getRole();
 
-  const role = localStorage.getItem("role");
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await API.get("/notifications/unread-count");
+        setUnreadCount(res.data.unread_count);
+      } catch {
+        setUnreadCount(0);
+      }
+    };
+
+    const handleRefresh = () => {
+      fetchUnreadCount();
+    };
+
+    fetchUnreadCount();
+    window.addEventListener("notifications:refresh", handleRefresh);
+
+    return () => {
+      window.removeEventListener("notifications:refresh", handleRefresh);
+    };
+  }, [location.pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
+    clearSession();
+    showToast("Logged out successfully.", "info");
     navigate("/login");
   };
 
+  const roleLabel =
+    role === "organizer"
+      ? "Organizer"
+      : role === "admin"
+        ? "Admin"
+        : "Participant";
+
   return (
     <nav style={styles.navbar}>
-      <div style={styles.logoSection}>
-        <h2 style={styles.logo}>⚡ SmartEvent</h2>
+      <div style={styles.brandBlock}>
+        <button style={styles.brandButton} onClick={() => navigate("/")}>
+          SmartEvent
+        </button>
+        <span style={styles.rolePill}>{roleLabel}</span>
       </div>
 
       <div style={styles.links}>
         {role === "participant" && (
           <>
-            <Link to="/events" style={styles.link}>Browse Events</Link>
-            <Link to="/my-registrations" style={styles.link}>My Registrations</Link>
-            <Link to="/notifications" style={styles.link}>🔔 Notifications</Link>
+            <Link to="/events" style={styles.link}>
+              Explore Events
+            </Link>
+            <Link to="/my-registrations" style={styles.link}>
+              My Plans
+            </Link>
+            <Link to="/notifications" style={styles.link}>
+              Notifications{unreadCount > 0 ? ` (${unreadCount})` : ""}
+            </Link>
           </>
         )}
 
         {role === "organizer" && (
           <>
-            <Link to="/organizer-dashboard" style={styles.link}>Dashboard</Link>
-            <Link to="/events" style={styles.link}>Browse Events</Link>
-            <Link to="/notifications" style={styles.link}>🔔 Notifications</Link>
+            <Link to="/organizer-dashboard" style={styles.link}>
+              Control Center
+            </Link>
+            <Link to="/events" style={styles.link}>
+              Public Events
+            </Link>
+            <Link to="/notifications" style={styles.link}>
+              Notifications{unreadCount > 0 ? ` (${unreadCount})` : ""}
+            </Link>
           </>
         )}
 
         {role === "admin" && (
           <>
-            <Link to="/admin-dashboard" style={styles.link}>Admin Dashboard</Link>
-            <Link to="/notifications" style={styles.link}>🔔 Notifications</Link>
+            <Link to="/admin-dashboard" style={styles.link}>
+              Admin Overview
+            </Link>
+            <Link to="/notifications" style={styles.link}>
+              Notifications{unreadCount > 0 ? ` (${unreadCount})` : ""}
+            </Link>
           </>
         )}
 
@@ -57,54 +110,63 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "18px 45px",
-    background: "rgba(79, 70, 229, 0.95)",
-    backdropFilter: "blur(12px)",
+    padding: "18px 32px",
+    background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
     color: "white",
-    boxShadow: "0 8px 25px rgba(0,0,0,0.12)",
-    borderBottom: "1px solid rgba(255,255,255,0.15)",
+    boxShadow: "0 8px 25px rgba(15, 23, 42, 0.24)",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
+    gap: "20px",
+    flexWrap: "wrap",
   },
-
-  logoSection: {
+  brandBlock: {
     display: "flex",
     alignItems: "center",
+    gap: "12px",
   },
-
-  logo: {
-    margin: 0,
-    fontSize: "28px",
-    fontWeight: "700",
-    letterSpacing: "0.5px",
+  brandButton: {
+    background: "transparent",
+    border: "none",
+    color: "white",
+    fontSize: "26px",
+    fontWeight: "800",
+    letterSpacing: "0.4px",
     cursor: "pointer",
   },
-
+  rolePill: {
+    padding: "6px 10px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.12)",
+    color: "#e2e8f0",
+    fontSize: "12px",
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+  },
   links: {
     display: "flex",
     alignItems: "center",
-    gap: "24px",
+    gap: "12px",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
   },
-
   link: {
     color: "white",
     textDecoration: "none",
-    fontWeight: "500",
-    fontSize: "15px",
-    transition: "0.3s ease",
-    padding: "8px 12px",
-    borderRadius: "8px",
-  },
-
-  logoutBtn: {
-    background: "white",
-    color: "#4f46e5",
-    border: "none",
-    padding: "10px 18px",
-    borderRadius: "10px",
-    cursor: "pointer",
     fontWeight: "600",
     fontSize: "14px",
-    transition: "0.3s ease",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+    padding: "10px 14px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.08)",
+  },
+  logoutBtn: {
+    background: "#f8fafc",
+    color: "#1e293b",
+    border: "none",
+    padding: "10px 16px",
+    borderRadius: "999px",
+    cursor: "pointer",
+    fontWeight: "700",
+    fontSize: "14px",
   },
 };
 
