@@ -254,7 +254,7 @@ def root():
 @app.post("/users", response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
-    # 🔥 CHECK IF EMAIL EXISTS
+    # CHECK IF EMAIL EXISTS
     existing = db.query(models.User).filter(
         models.User.email == user.email
     ).first()
@@ -433,11 +433,11 @@ def get_events(
 ):
     query = db.query(models.Event).order_by(models.Event.date.asc())
 
-    # 🔍 Search
+    #  Search
     if search:
         query = query.filter(models.Event.title.contains(search))
 
-    # 📄 Pagination
+    #  Pagination
     events = query.offset(skip).limit(limit).all()
 
     return [serialize_event(event, db) for event in events]

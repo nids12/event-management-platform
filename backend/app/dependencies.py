@@ -9,7 +9,7 @@ from app import models
 SECRET_KEY = "supersecretkey"
 ALGORITHM = "HS256"
 
-# ✅ THIS enables Swagger Authorize button
+# enables Swagger Authorize button
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 

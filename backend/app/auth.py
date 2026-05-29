@@ -1,13 +1,13 @@
 from jose import jwt
 from datetime import datetime, timedelta
 
-# 🔐 Secret settings
+
 SECRET_KEY = "supersecretkey"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
-# ✅ Create JWT token
+# Create JWT token
 def create_access_token(data: dict):
     to_encode = data.copy()
 

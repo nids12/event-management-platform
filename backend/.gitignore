@@ -1,0 +1,19 @@
+# Python virtual environment
+venv/
+
+# Environment files
+*.env
+
+# Bytecode
+__pycache__/
+*.py[cod]
+
+# VS Code settings
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
+
+/workspaces/event-management-platform/backend/app/auth.py
+/workspaces/event-management-platform/backend/app/dependencies.py
