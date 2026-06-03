@@ -2,7 +2,7 @@
 > A full-stack event management platform built for real-world usage — not just a demo.
 
 **Stack:** FastAPI · React · SQLite · JWT · REST APIs  
-**Status:** Live | [Demo Link](#) · [Frontend](#) · [Backend](#)
+**Status:** Live | https://event-management-platform-wheat.vercel.app/
 
 ---
 
