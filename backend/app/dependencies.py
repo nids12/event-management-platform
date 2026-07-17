@@ -6,9 +6,6 @@ from fastapi.security import OAuth2PasswordBearer
 from app.database import get_db
 from app import models
 
-SECRET_KEY = "supersecretkey"
-ALGORITHM = "HS256"
-
 # enables Swagger Authorize button
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
